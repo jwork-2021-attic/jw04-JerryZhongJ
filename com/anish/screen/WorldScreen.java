@@ -2,9 +2,12 @@ package com.anish.screen;
 
 import java.awt.Color;
 import java.awt.event.KeyEvent;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 
-import com.anish.calabashbros.BubbleSorter;
-import com.anish.calabashbros.Calabash;
+import com.anish.calabashbros.QuickSorter;
+import com.anish.calabashbros.Goblin;
 import com.anish.calabashbros.World;
 
 import asciiPanel.AsciiPanel;
@@ -12,51 +15,58 @@ import asciiPanel.AsciiPanel;
 public class WorldScreen implements Screen {
 
     private World world;
-    private Calabash[] bros;
+    private Goblin[][] goblins;
     String[] sortSteps;
 
     public WorldScreen() {
         world = new World();
 
-        bros = new Calabash[7];
+        goblins = new Goblin[8][8];
+        List<Integer> row = Arrays.asList(0, 1, 2, 3, 4, 5, 6, 7);
+        Collections.shuffle(row);
+        List<Integer> column = Arrays.asList(0, 1, 2, 3, 4, 5, 6, 7);
+        for (int i = 0; i < 8; i++) {
+            Collections.shuffle(column);
+            for (int j = 0; j < 8; j++) {
+                int ii = row.get(i);
+                int jj = row.get(j);
+                goblins[i][j] = new Goblin(new Color(ii * 32, jj * 32, 128), ii * 8 + jj, world);
+                world.put(goblins[i][j], 4 * i + 4, 3 * j + 2);
+            }
+        }
 
-        bros[3] = new Calabash(new Color(204, 0, 0), 1, world);
-        bros[5] = new Calabash(new Color(255, 165, 0), 2, world);
-        bros[1] = new Calabash(new Color(252, 233, 79), 3, world);
-        bros[0] = new Calabash(new Color(78, 154, 6), 4, world);
-        bros[4] = new Calabash(new Color(50, 175, 255), 5, world);
-        bros[6] = new Calabash(new Color(114, 159, 207), 6, world);
-        bros[2] = new Calabash(new Color(173, 127, 168), 7, world);
-
-        world.put(bros[0], 10, 10);
-        world.put(bros[1], 12, 10);
-        world.put(bros[2], 14, 10);
-        world.put(bros[3], 16, 10);
-        world.put(bros[4], 18, 10);
-        world.put(bros[5], 20, 10);
-        world.put(bros[6], 22, 10);
-
-        BubbleSorter<Calabash> b = new BubbleSorter<>();
-        b.load(bros);
+        QuickSorter<Goblin> b = new QuickSorter<>();
+        b.load(flatten(goblins, 8));
         b.sort();
 
         sortSteps = this.parsePlan(b.getPlan());
     }
 
+    private Goblin[] flatten(Goblin[][] goblins, int col_num) {
+        Goblin[] arr = new Goblin[goblins.length * col_num];
+        for (int i = 0; i < goblins.length; i++) {
+            for (int j = 0; j < col_num; j++) {
+                arr[i * col_num + j] = goblins[i][j];
+            }
+        }
+        return arr;
+    }
     private String[] parsePlan(String plan) {
         return plan.split("\n");
     }
 
-    private void execute(Calabash[] bros, String step) {
+    private void execute(Goblin[][] goblins, String step) {
         String[] couple = step.split("<->");
-        getBroByRank(bros, Integer.parseInt(couple[0])).swap(getBroByRank(bros, Integer.parseInt(couple[1])));
+        getGoblinByRank(goblins, Integer.parseInt(couple[0])).swap(getGoblinByRank(goblins, Integer.parseInt(couple[1])));
     }
 
-    private Calabash getBroByRank(Calabash[] bros, int rank) {
-        for (Calabash bro : bros) {
-            if (bro.getRank() == rank) {
-                return bro;
-            }
+    private Goblin getGoblinByRank(Goblin[][] goblins, int rank) {
+        for (Goblin[] row : goblins) {
+            for (Goblin goblin : row) {
+                if (goblin.getRank() == rank) {
+                    return goblin;
+                }
+            }  
         }
         return null;
     }
@@ -79,7 +89,7 @@ public class WorldScreen implements Screen {
     public Screen respondToUserInput(KeyEvent key) {
 
         if (i < this.sortSteps.length) {
-            this.execute(bros, sortSteps[i]);
+            this.execute(goblins, sortSteps[i]);
             i++;
         }
 
