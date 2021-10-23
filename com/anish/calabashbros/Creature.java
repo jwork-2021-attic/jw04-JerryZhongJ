@@ -12,4 +12,5 @@ public class Creature extends Thing {
         this.world.put(this, xPos, yPos);
     }
 
+
 }

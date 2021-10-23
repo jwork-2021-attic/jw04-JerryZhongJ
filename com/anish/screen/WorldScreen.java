@@ -2,64 +2,65 @@ package com.anish.screen;
 
 import java.awt.Color;
 import java.awt.event.KeyEvent;
+import java.util.LinkedList;
+import java.util.Random;
 
-import com.anish.calabashbros.BubbleSorter;
+import com.anish.calabashbros.Boy;
 import com.anish.calabashbros.Calabash;
+import com.anish.calabashbros.Floor;
+import com.anish.calabashbros.Girl;
+import com.anish.calabashbros.Navigation;
 import com.anish.calabashbros.World;
+import com.anish.calabashbros.Navigation.Direction;
 
 import asciiPanel.AsciiPanel;
 
 public class WorldScreen implements Screen {
 
     private World world;
-    private Calabash[] bros;
-    String[] sortSteps;
+    private Boy boy;
+    private Girl girl;
+    LinkedList<Direction> plan;
 
     public WorldScreen() {
-        world = new World();
+        MazeGenerator mg = new MazeGenerator();
+        world = mg.getMaze();
+        boy = new Boy(world);
+        girl = new Girl(world);
 
-        bros = new Calabash[7];
+        Navigation nav = new Navigation(world, mg.getEndX(), mg.getEndY());
+        nav.startNavigation();
+        world.put(boy, 0, 0);
+        world.put(girl, mg.getEndX(), mg.getEndY());
 
-        bros[3] = new Calabash(new Color(204, 0, 0), 1, world);
-        bros[5] = new Calabash(new Color(255, 165, 0), 2, world);
-        bros[1] = new Calabash(new Color(252, 233, 79), 3, world);
-        bros[0] = new Calabash(new Color(78, 154, 6), 4, world);
-        bros[4] = new Calabash(new Color(50, 175, 255), 5, world);
-        bros[6] = new Calabash(new Color(114, 159, 207), 6, world);
-        bros[2] = new Calabash(new Color(173, 127, 168), 7, world);
-
-        world.put(bros[0], 10, 10);
-        world.put(bros[1], 12, 10);
-        world.put(bros[2], 14, 10);
-        world.put(bros[3], 16, 10);
-        world.put(bros[4], 18, 10);
-        world.put(bros[5], 20, 10);
-        world.put(bros[6], 22, 10);
-
-        BubbleSorter<Calabash> b = new BubbleSorter<>();
-        b.load(bros);
-        b.sort();
-
-        sortSteps = this.parsePlan(b.getPlan());
+        plan = nav.getPlan();
+        System.out.println(plan.size());
     }
 
-    private String[] parsePlan(String plan) {
-        return plan.split("\n");
-    }
 
-    private void execute(Calabash[] bros, String step) {
-        String[] couple = step.split("<->");
-        getBroByRank(bros, Integer.parseInt(couple[0])).swap(getBroByRank(bros, Integer.parseInt(couple[1])));
-    }
+    private void execute() {
+        if(plan.isEmpty())
+            return;
 
-    private Calabash getBroByRank(Calabash[] bros, int rank) {
-        for (Calabash bro : bros) {
-            if (bro.getRank() == rank) {
-                return bro;
-            }
+        int x = boy.getX();
+        int y = boy.getY();
+        switch (plan.pop()) {
+        case UP:
+            boy.moveTo(x, y - 1);
+            break;
+        case RIGHT:
+            boy.moveTo(x + 1, y);
+            break;
+        case DOWN:
+            boy.moveTo(x, y + 1);
+            break;
+        case LEFT:
+            boy.moveTo(x - 1, y);
+            break;
         }
-        return null;
+        world.put(new Floor(AsciiPanel.brightGreen, world), x, y);
     }
+
 
     @Override
     public void displayOutput(AsciiPanel terminal) {
@@ -73,16 +74,12 @@ public class WorldScreen implements Screen {
         }
     }
 
-    int i = 0;
+
 
     @Override
     public Screen respondToUserInput(KeyEvent key) {
 
-        if (i < this.sortSteps.length) {
-            this.execute(bros, sortSteps[i]);
-            i++;
-        }
-
+        execute();
         return this;
     }
 
